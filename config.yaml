@@ -1,0 +1,66 @@
+# Configuration file for ViT-Base EMA Teacher-Student Training
+
+# Data Configuration
+data:
+  data_dir: "/path/to/your/fish/dataset"  # Update this path
+  image_size: 224
+  batch_size: 32
+  num_workers: 4
+  train_split: 0.8
+  val_split: 0.2
+
+# Model Configuration
+model:
+  model_name: "vit_base_patch16_224"
+  pretrained: true
+  dropout_rate: 0.1
+  use_timm: true  # Use timm library (recommended)
+
+# Training Configuration
+training:
+  epochs: 100
+  learning_rate: 1e-4
+  weight_decay: 0.05
+  warmup_epochs: 10
+  seed: 42
+
+# EMA Teacher-Student Configuration
+ema:
+  momentum: 0.999          # EMA momentum (0.999 or 0.9999 typical)
+  consistency_loss: "mse"  # "mse" or "kl"
+  consistency_weight: 1.0  # Weight for consistency loss
+  temperature: 4.0         # Temperature for softmax in consistency loss
+
+# System Configuration
+system:
+  device: null  # null for auto-detect, or "cuda", "mps", "cpu"
+  save_dir: "./checkpoints"
+  save_frequency: 10
+
+# Logging Configuration
+logging:
+  use_wandb: true
+  wandb_project: "vit-fish-ema"
+  wandb_run_name: null  # null for auto-generated
+
+# Advanced Configuration
+advanced:
+  gradient_clip_norm: 1.0
+  label_smoothing: 0.1
+  mixup_alpha: 0.2
+  cutmix_alpha: 1.0
+  
+# Data Augmentation Configuration
+augmentation:
+  strong_aug:
+    horizontal_flip: 0.5
+    vertical_flip: 0.2
+    rotation_limit: 30
+    brightness_contrast: 0.3
+    hue_saturation: 0.2
+    gaussian_noise: 0.3
+    cutout_holes: 8
+  
+  weak_aug:
+    horizontal_flip: 0.5
+    brightness_contrast: 0.1

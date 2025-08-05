@@ -58,6 +58,8 @@ class SemiSupervisedEMATrainer:
         self.num_classes = num_classes
         self.consistency_weight = consistency_weight
         self.pseudo_label_threshold = pseudo_label_threshold
+        self.temperature = temperature
+        self.consistency_loss_type = consistency_loss_type
         self.warmup_epochs = warmup_epochs
         self.ramp_up_epochs = ramp_up_epochs
         self.use_wandb = use_wandb
@@ -184,7 +186,7 @@ class SemiSupervisedEMATrainer:
                 labeled_accuracy.update(labeled_acc.item(), labeled_images.size(0))
                 labeled_samples += labeled_images.size(0)
             
-            # Consistency loss on unlabeled data
+                # Consistency loss on unlabeled data
             if unlabeled_images.size(0) > 0 and current_consistency_weight > 0:
                 # Student prediction on unlabeled data
                 student_unlabeled_logits = self.student_model(unlabeled_images)
@@ -192,7 +194,7 @@ class SemiSupervisedEMATrainer:
                 # Teacher prediction on unlabeled data (no gradients)
                 with torch.no_grad():
                     teacher_unlabeled_logits = self.ema_teacher.teacher_model(unlabeled_images)
-                    teacher_probs = torch.softmax(teacher_unlabeled_logits, dim=1)
+                    teacher_probs = torch.softmax(teacher_unlabeled_logits / self.temperature, dim=1)
                     
                     # Generate pseudo-labels from teacher
                     max_probs, pseudo_labels = torch.max(teacher_probs, dim=1)
@@ -207,15 +209,22 @@ class SemiSupervisedEMATrainer:
                     pseudo_acc = (student_pred == pseudo_labels).float().mean() * 100
                     pseudo_label_accuracy.update(pseudo_acc.item(), unlabeled_images.size(0))
                 
-                # Consistency loss between student and teacher on unlabeled data
-                consistency_loss = self.consistency_loss(
-                    student_unlabeled_logits, 
-                    teacher_unlabeled_logits
-                )
+                # Apply consistency loss to ALL unlabeled data (not just high-confidence)
+                # This is the key fix - consistency loss should always be computed
+                if self.consistency_loss_type == 'mse':
+                    # MSE between softmax probabilities
+                    student_probs = torch.softmax(student_unlabeled_logits / self.temperature, dim=1)
+                    teacher_probs_detached = teacher_probs.detach()
+                    consistency_loss = torch.mean((student_probs - teacher_probs_detached) ** 2)
+                else:
+                    # KL divergence consistency loss
+                    consistency_loss = self.consistency_loss(
+                        torch.log_softmax(student_unlabeled_logits / self.temperature, dim=1),
+                        teacher_probs.detach()
+                    )
+                
                 total_loss += current_consistency_weight * consistency_loss
-                unlabeled_samples += unlabeled_images.size(0)
-            
-            # Backward pass
+                unlabeled_samples += unlabeled_images.size(0)            # Backward pass
             self.optimizer.zero_grad()
             if total_loss > 0:
                 total_loss.backward()

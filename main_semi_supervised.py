@@ -75,8 +75,8 @@ def parse_arguments():
                         help='Type of consistency loss (default: mse)')
     parser.add_argument('--consistency_weight', type=float, default=1.0,
                         help='Weight for consistency loss (default: 1.0)')
-    parser.add_argument('--pseudo_label_threshold', type=float, default=0.95,
-                        help='Confidence threshold for pseudo-labels (default: 0.95)')
+    parser.add_argument('--pseudo_label_threshold', type=float, default=0.7,
+                        help='Confidence threshold for pseudo-labels (lowered for better utilization - default: 0.7)')
     parser.add_argument('--temperature', type=float, default=4.0,
                         help='Temperature for consistency loss (default: 4.0)')
     

@@ -71,7 +71,18 @@ python organize_fish_data.py \
 
 ### 3. Train Your Model
 
-#### Semi-Supervised Training (Recommended)
+#### Option A: Google Colab (Recommended for beginners)
+
+1. **Upload to GitHub**: Commit your code to GitHub (images will be ignored via .gitignore)
+2. **Upload Images**: Put your fish images in Google Drive
+3. **Open Colab**: Use the provided `Colab_Training.ipynb` notebook
+4. **Run Training**: Follow the notebook cells to train your model
+
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/cat-thomson/ViT-FishID/blob/main/Colab_Training.ipynb)
+
+#### Option B: Local Training
+
+##### Semi-Supervised Training (Recommended)
 ```bash
 python main_semi_supervised.py \
     --data_dir /path/to/organized/dataset \
@@ -81,7 +92,7 @@ python main_semi_supervised.py \
     --use_wandb
 ```
 
-#### Supervised Training (Labeled data only)
+##### Supervised Training (Labeled data only)
 ```bash
 python main.py \
     --data_dir /path/to/organized/dataset \
@@ -90,7 +101,57 @@ python main.py \
     --learning_rate 1e-4
 ```
 
-## 📖 Detailed Usage
+## 🌐 Google Colab Training
+
+For users who want to train without local GPU setup, we provide a complete Google Colab notebook.
+
+### Why Use Google Colab?
+- ✅ **Free GPU Access**: Train on Tesla T4 GPUs for free
+- ✅ **No Setup Required**: Pre-configured environment
+- ✅ **Easy Data Management**: Connect with Google Drive
+- ✅ **Automatic Downloads**: Get your trained models easily
+
+### Colab Setup Steps
+
+1. **Prepare Your Data in Google Drive**
+   ```
+   /MyDrive/Fish_Images/
+   ├── bass_001.jpg
+   ├── trout_002.jpg
+   ├── salmon_003.jpg
+   └── ...
+   ```
+
+2. **Open the Colab Notebook**
+   
+   [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/cat-thomson/ViT-FishID/blob/main/Colab_Training.ipynb)
+
+3. **Enable GPU Runtime**
+   - Runtime → Change runtime type → Hardware accelerator → GPU
+
+4. **Update Paths in Notebook**
+   ```python
+   FISH_IMAGES_PATH = "/content/drive/MyDrive/Your_Fish_Folder"  # Update this!
+   ```
+
+5. **Run All Cells**
+   - The notebook will handle everything automatically
+   - Training progress will be shown in real-time
+   - Results will be automatically downloaded
+
+### Colab Training Features
+- 🔄 **Automatic Data Organization**: Sorts labeled/unlabeled fish
+- 📊 **Real-time Monitoring**: W&B integration for tracking
+- � **Automatic Saving**: Checkpoints saved to Google Drive
+- ⬇️ **Easy Download**: Results packaged and downloaded
+- 🧹 **Smart Cleanup**: Optional space management
+
+### Expected Colab Performance
+- **Training Time**: ~2-3 hours for 50 epochs
+- **GPU Memory**: ~6-8GB (fits comfortably on T4)
+- **Storage**: ~2-5GB in Google Drive
+- **Accuracy**: Same as local training (~75-85%)
+
 
 ### Data Pipeline
 

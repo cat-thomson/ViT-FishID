@@ -13,8 +13,8 @@
 
 # Dataset directories with images
 Images/
-organized_fish_dataset_fixed/labeled/
-organized_fish_dataset_fixed/unlabeled/
+organized_fish_dataset_fixed/
+*.zip
 
 # Keep dataset metadata but exclude actual images
 !organized_fish_dataset_fixed/dataset_info.json

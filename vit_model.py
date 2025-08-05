@@ -40,7 +40,7 @@ class ViTForFishClassification(nn.Module):
                 model_name,
                 pretrained=pretrained,
                 num_classes=0,  # Remove classification head
-                global_pool=''  # Remove global pooling
+                global_pool='token'  # Use CLS token pooling
             )
             
             # Get feature dimension

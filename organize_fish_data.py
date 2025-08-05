@@ -34,8 +34,16 @@ def parse_arguments():
                         help='Copy files instead of moving them (default: True)')
     parser.add_argument('--interactive', action='store_true', default=True,
                         help='Use interactive species selection (default: True)')
+    parser.add_argument('--no-interactive', action='store_true',
+                        help='Disable interactive mode (use with --labeled_species)')
     
-    return parser.parse_args()
+    args = parser.parse_args()
+    
+    # Handle interactive flag
+    if args.no_interactive:
+        args.interactive = False
+    
+    return args
 
 
 def extract_potential_species_names(input_dir: str) -> List[str]:

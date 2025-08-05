@@ -1,0 +1,52 @@
+# Image files
+*.jpg
+*.jpeg
+*.png
+*.bmp
+*.gif
+*.tiff
+*.webp
+*.svg
+
+# Image annotation files
+*.txt
+
+# Dataset directories with images
+Images/
+organized_fish_dataset_fixed/labeled/
+organized_fish_dataset_fixed/unlabeled/
+
+# Keep dataset metadata but exclude actual images
+!organized_fish_dataset_fixed/dataset_info.json
+!species_mapping.txt
+!example_species_mapping.json
+
+# Python cache and virtual environment
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+venv/
+env/
+.env
+
+# Training artifacts
+wandb/
+semi_supervised_checkpoints/
+*.pth
+*.pt
+*.ckpt
+
+# System files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+logs/

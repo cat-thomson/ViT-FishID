@@ -23,6 +23,7 @@ import sys
 import torch
 import wandb
 from datetime import datetime
+from typing import Tuple
 
 # Import custom modules
 from vit_model import ViTForFishClassification

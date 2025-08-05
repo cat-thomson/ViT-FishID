@@ -1,354 +1,348 @@
-# ViT-FishID: Vision Transformer with EMA Teacher-Student Framework
+# 🐟 ViT-FishID: Semi-Supervised Fish Classification with Vision Transformers
 
-A comprehensive implementation of Vision Transformer (ViT-Base) using an Exponential Moving Average (EMA) teacher-student framework for fish species classification, with **full semi-supervised learning support**.
+A comprehensive implementation of EMA (Exponential Moving Average) teacher-student framework for semi-supervised fish classification using Vision Transformers (ViT).
 
-## 🐟 Overview
+## 🎯 Overview
 
-This project implements a state-of-the-art training framework that combines:
+This project implements a state-of-the-art semi-supervised learning pipeline specifically designed for fish classification. It combines:
 
-- **Vision Transformer (ViT-Base)**: Pre-trained transformer architecture for image classification
-- **EMA Teacher-Student Framework**: Exponential moving average updates for improved training stability
-- **Semi-Supervised Learning**: Leverage both labeled and unlabeled fish images
-- **Advanced Data Augmentation**: Strong and weak augmentation strategies
-- **Comprehensive Logging**: Integration with Weights & Biases
+- **EMA Teacher-Student Framework**: Consistency regularization using exponential moving averages
+- **Vision Transformers (ViT)**: Modern transformer architecture for image classification
+- **Semi-Supervised Learning**: Efficiently use both labeled and unlabeled fish data
+- **Automated Data Pipeline**: Extract fish cutouts from bounding box annotations
+- **Interactive Dataset Organization**: Smart species detection and organization
 
-### Key Features
-
-- ✅ **Semi-Supervised Learning**: Use unlabeled fish cutouts to improve performance
-- ✅ **Dual Model Architecture**: Student model learns with gradients, teacher provides stable predictions
-- ✅ **Consistency Regularization**: MSE or KL divergence loss between student and teacher
-- ✅ **Intelligent Data Organization**: Automatically organize fish cutouts by species
-- ✅ **Advanced Augmentation**: Albumentations-based augmentation pipeline
-- ✅ **Flexible Backbone**: Support for both timm and Hugging Face transformers
-- ✅ **Production Ready**: Comprehensive logging, checkpointing, and resuming
-
-## 🏗️ Architecture
-
-### EMA Teacher-Student Framework
+## 🏗️ Project Structure
 
 ```
-Input Image
-     │
-     ├── Strong Augmentation ──→ Student Model ──→ Supervised Loss
-     │                              │
-     └── Weak Augmentation ────→ Teacher Model ──→ Consistency Loss
-                                     ↑
-                               EMA Update
+ViT-FishID/
+├── README.md                      # This file
+├── requirements.txt               # Python dependencies
+├── config.py                     # Training configuration
+│
+├── 🧠 Model & Training
+├── vit_model.py                  # ViT architecture implementations
+├── ema_teacher.py                # EMA teacher and consistency losses
+├── ema_trainer.py                # Supervised EMA trainer
+├── semi_supervised_trainer.py    # Semi-supervised trainer
+├── data_loader.py                # Basic data loading utilities
+├── semi_supervised_data.py       # Mixed labeled/unlabeled data loaders
+│
+├── 🎯 Training Scripts
+├── main.py                       # Supervised training
+├── main_semi_supervised.py       # Semi-supervised training
+│
+├── 📁 Data Pipeline
+├── extract_fish_cutouts.py       # Extract fish from bounding boxes
+├── organize_fish_data.py         # Organize extracted fish images
+├── fish_pipeline.py              # Complete extraction + organization pipeline
+└── example_species_mapping.json  # Example species ID mapping
 ```
-
-### Key Components
-
-1. **Student Model**: ViT-Base trained with standard backpropagation
-2. **Teacher Model**: EMA copy of student providing stable pseudo-labels
-3. **Consistency Loss**: Encourages agreement between student and teacher
-4. **EMA Updates**: `teacher = momentum * teacher + (1 - momentum) * student`
-
-## 📦 Installation
-
-### 1. Clone Repository
-
-```bash
-git clone https://github.com/your-username/ViT-FishID.git
-cd ViT-FishID
-```
-
-### 2. Install Dependencies
-
-```bash
-# Create virtual environment (recommended)
-python -m venv vit_env
-source vit_env/bin/activate  # On Windows: vit_env\Scripts\activate
-
-# Install dependencies
-pip install -r requirements.txt
-```
-
-### 3. Install Additional Packages
-
-```bash
-# For GPU support (CUDA)
-pip install torch torchvision --index-url https://download.pytorch.org/whl/cu118
-
-# For Apple Silicon (MPS)
-pip install torch torchvision
-```
-
-## 📊 Dataset Preparation
-
-### Expected Directory Structure
-
-```
-fish_dataset/
-├── species_1/
-│   ├── img_001.jpg
-│   ├── img_002.jpg
-│   └── ...
-├── species_2/
-│   ├── img_001.jpg
-│   ├── img_002.jpg
-│   └── ...
-└── species_n/
-    ├── img_001.jpg
-    └── ...
-```
-
-### Supported Image Formats
-
-- JPEG (.jpg, .jpeg)
-- PNG (.png)
-- BMP (.bmp)
-- TIFF (.tiff)
 
 ## 🚀 Quick Start
 
-### For Semi-Supervised Learning (Recommended for Mixed Labeled/Unlabeled Data)
+### 1. Install Dependencies
 
-If you have fish cutouts but not all are labeled by species:
-
-#### 1. Organize Your Data
 ```bash
-# Automatically organize fish cutouts
-python organize_fish_data.py \
-    --input_dir /path/to/fish/cutouts \
-    --output_dir /path/to/organized/dataset \
-    --interactive
+pip install -r requirements.txt
 ```
 
-#### 2. Train with Semi-Supervised Learning
+### 2. Prepare Your Data
+
+If you have frame images with bounding box annotations (YOLO format):
+
+```bash
+# Run complete pipeline: extraction + organization
+python fish_pipeline.py \
+    --frames_dir /path/to/your/frames \
+    --annotations_dir /path/to/your/annotations \
+    --output_dir /path/to/organized/dataset \
+    --species_mapping_file species_mapping.json
+```
+
+If you already have fish cutout images:
+
+```bash
+# Just organize existing cutouts
+python organize_fish_data.py \
+    --input_dir /path/to/fish/cutouts \
+    --output_dir /path/to/organized/dataset
+```
+
+### 3. Train Your Model
+
+#### Semi-Supervised Training (Recommended)
 ```bash
 python main_semi_supervised.py \
     --data_dir /path/to/organized/dataset \
-    --epochs 100 \
-    --unlabeled_ratio 3.0 \
-    --use_wandb
-```
-
-### For Fully Supervised Learning
-
-If all your fish images are labeled:
-
-### For Fully Supervised Learning
-
-If all your fish images are labeled:
-
-#### Basic Training
-
-```bash
-python main.py \
-    --data_dir /path/to/fish/dataset \
-    --epochs 100 \
+    --num_epochs 100 \
     --batch_size 32 \
-    --use_wandb
-```
-
-#### Advanced Training with Custom Parameters
-
-```bash
-python main.py \
-    --data_dir /path/to/fish/dataset \
-    --model_name vit_base_patch16_224 \
-    --batch_size 32 \
-    --epochs 100 \
     --learning_rate 1e-4 \
-    --ema_momentum 0.999 \
-    --consistency_weight 1.0 \
-    --consistency_loss mse \
-    --temperature 4.0 \
-    --warmup_epochs 10 \
-    --use_wandb \
-    --wandb_project my-fish-project
+    --use_wandb
 ```
 
-#### Using the Training Script
+#### Supervised Training (Labeled data only)
+```bash
+python main.py \
+    --data_dir /path/to/organized/dataset \
+    --num_epochs 100 \
+    --batch_size 32 \
+    --learning_rate 1e-4
+```
+
+## 📖 Detailed Usage
+
+### Data Pipeline
+
+#### 1. Extract Fish Cutouts from Bounding Boxes
+
+If your data consists of frame images with YOLO format annotations:
 
 ```bash
-# Edit train.sh to set your data path
-nano train.sh
-
-# Run training
-./train.sh
+python extract_fish_cutouts.py \
+    --frames_dir /path/to/frames \
+    --annotations_dir /path/to/annotations \
+    --output_dir /path/to/extracted/cutouts \
+    --buffer_ratio 0.1 \
+    --min_size 50
 ```
 
-## ⚙️ Configuration
+**Parameters:**
+- `--frames_dir`: Directory containing frame images
+- `--annotations_dir`: Directory containing YOLO format annotation files (.txt)
+- `--output_dir`: Where to save extracted fish cutouts
+- `--buffer_ratio`: Extra padding around bounding box (0.1 = 10% padding)
+- `--min_size`: Minimum cutout size in pixels (filters out tiny detections)
 
-### Key Hyperparameters
-
-| Parameter | Description | Default | Range |
-|-----------|-------------|---------|-------|
-| `ema_momentum` | EMA momentum for teacher updates | 0.999 | 0.9-0.9999 |
-| `consistency_weight` | Weight for consistency loss | 1.0 | 0.1-10.0 |
-| `temperature` | Temperature for softmax | 4.0 | 1.0-8.0 |
-| `learning_rate` | Learning rate for optimizer | 1e-4 | 1e-5-1e-3 |
-| `warmup_epochs` | Number of warmup epochs | 10 | 5-20 |
-
-### EMA Teacher-Student Specific Settings
-
-```python
-# EMA momentum (higher = more stable teacher)
-ema_momentum = 0.999  # or 0.9999 for very stable teacher
-
-# Consistency loss type
-consistency_loss = "mse"  # or "kl" for KL divergence
-
-# Consistency weight (balance supervised vs consistency loss)
-consistency_weight = 1.0  # increase for stronger regularization
-```
-
-## 📈 Monitoring and Logging
-
-### Weights & Biases Integration
+#### 2. Organize Fish Images for Training
 
 ```bash
-# Login to wandb (first time only)
-wandb login
+# Interactive mode (default)
+python organize_fish_data.py \
+    --input_dir /path/to/fish/cutouts \
+    --output_dir /path/to/organized/dataset
 
-# Train with logging
-python main.py --use_wandb --wandb_project my-project
+# Non-interactive mode with predefined species
+python organize_fish_data.py \
+    --input_dir /path/to/fish/cutouts \
+    --output_dir /path/to/organized/dataset \
+    --labeled_species bass trout salmon \
+    --no-interactive
 ```
 
-### Metrics Tracked
+This creates the following structure:
+```
+organized_dataset/
+├── labeled/
+│   ├── bass/       # Images containing "bass" in filename
+│   ├── trout/      # Images containing "trout" in filename
+│   └── salmon/     # Images containing "salmon" in filename
+└── unlabeled/      # All other fish images
+```
 
-- **Training**: Supervised loss, consistency loss, accuracy
-- **Validation**: Student and teacher performance
-- **System**: Learning rate, memory usage, training time
+#### 3. Complete Pipeline (One Command)
 
-## 🔄 Model Architecture Details
+```bash
+python fish_pipeline.py \
+    --frames_dir /path/to/frames \
+    --annotations_dir /path/to/annotations \
+    --output_dir /path/to/final/dataset \
+    --buffer_ratio 0.1 \
+    --min_cutout_size 50 \
+    --species_mapping_file my_species.json \
+    --labeled_species bass trout salmon
+```
 
-### Vision Transformer Configuration
+### Training Configuration
+
+Edit `config.py` to customize training parameters:
 
 ```python
-# Default ViT-Base configuration
+class Config:
+    # Model settings
+    model_name = 'vit_base_patch16_224'  # or 'microsoft/vit-base-patch16-224'
+    num_classes = 10  # Number of fish species
+    image_size = 224
+    
+    # Training settings
+    batch_size = 32
+    learning_rate = 1e-4
+    num_epochs = 100
+    
+    # EMA settings
+    ema_momentum = 0.999
+    consistency_weight = 1.0
+    
+    # Semi-supervised settings
+    confidence_threshold = 0.95
+    consistency_ramp_epochs = 20
+```
+
+### Advanced Features
+
+#### Custom Species Mapping
+
+Create a JSON file mapping species IDs to names:
+
+```json
 {
-    "model_name": "vit_base_patch16_224",
-    "image_size": 224,
-    "patch_size": 16,
-    "hidden_size": 768,
-    "num_attention_heads": 12,
-    "num_hidden_layers": 12,
-    "intermediate_size": 3072
+    "0": "unknown",
+    "1": "bass",
+    "2": "trout", 
+    "3": "salmon",
+    "4": "tuna"
 }
 ```
 
-### EMA Update Formula
-
-```python
-# Teacher parameter update
-teacher_param = ema_momentum * teacher_param + (1 - ema_momentum) * student_param
-```
-
-### Consistency Loss Functions
-
-**MSE Loss:**
-```python
-student_probs = softmax(student_logits / temperature)
-teacher_probs = softmax(teacher_logits / temperature)
-loss = MSE(student_probs, teacher_probs)
-```
-
-**KL Divergence:**
-```python
-student_log_probs = log_softmax(student_logits / temperature)
-teacher_probs = softmax(teacher_logits / temperature)
-loss = KL_div(student_log_probs, teacher_probs) * temperature²
-```
-
-## 🎯 Performance Tips
-
-### For Better Results
-
-1. **Higher EMA Momentum**: Use 0.9999 for very stable teacher
-2. **Temperature Tuning**: Higher temperature (6-8) for softer targets
-3. **Consistency Weight**: Start with 1.0, increase gradually
-4. **Warmup**: Essential for stable training start
-
-### Memory Optimization
+#### Weights & Biases Integration
 
 ```bash
-# Reduce batch size for limited GPU memory
---batch_size 16
+# Login to W&B
+wandb login
 
-# Use gradient checkpointing (add to model)
---gradient_checkpointing
-
-# Mixed precision training (requires apex)
---use_amp
+# Train with logging
+python main_semi_supervised.py \
+    --data_dir /path/to/dataset \
+    --use_wandb \
+    --wandb_project "fish-classification" \
+    --wandb_entity "your-username"
 ```
 
-## 📋 Example Results
+#### Resume Training
 
-### Training Progress
-
-```
-Epoch 50/100
-Train - Loss: 0.234, Acc: 92.5%
-Student Val - Loss: 0.198, Acc: 94.1%
-Teacher Val - Loss: 0.186, Acc: 95.2%
+```bash
+python main_semi_supervised.py \
+    --data_dir /path/to/dataset \
+    --resume_from /path/to/checkpoint.pth
 ```
 
-### Expected Performance
+## 🧠 Model Architecture
 
-| Dataset Size | Epochs | Student Acc | Teacher Acc |
-|--------------|--------|-------------|-------------|
-| 1K images | 100 | 85-90% | 87-92% |
-| 5K images | 100 | 90-95% | 92-96% |
-| 10K+ images | 100 | 95-98% | 96-99% |
+### Vision Transformer (ViT)
+- **Base Model**: ViT-Base (86M parameters)
+- **Input Size**: 224×224 RGB images
+- **Patch Size**: 16×16 patches
+- **Implementation**: Compatible with both `timm` and HuggingFace `transformers`
 
-## 🛠️ Troubleshooting
+### EMA Teacher-Student Framework
+- **Teacher Model**: Exponential moving average of student weights
+- **Student Model**: Standard ViT trained with supervised loss
+- **Consistency Loss**: MSE or KL-divergence between teacher and student predictions
+- **EMA Momentum**: 0.999 (configurable)
+
+### Semi-Supervised Learning
+- **Labeled Data**: Standard cross-entropy loss
+- **Unlabeled Data**: Consistency regularization between teacher and student
+- **Pseudo-Labeling**: High-confidence teacher predictions used as labels
+- **Confidence Threshold**: 0.95 (configurable)
+
+## 📊 Training Monitoring
+
+The training process logs comprehensive metrics:
+
+### Supervised Metrics
+- Training/Validation Loss
+- Training/Validation Accuracy
+- Learning Rate Schedule
+- Model Checkpoints
+
+### Semi-Supervised Metrics
+- Consistency Loss (teacher vs student agreement)
+- Pseudo-Label Accuracy (quality of teacher predictions)
+- Labeled vs Unlabeled Loss Breakdown
+- Teacher Model Performance
+
+### Example Training Output
+```
+Epoch 1/100:
+📚 Labeled batch - Loss: 2.456, Acc: 34.2%
+🔄 Unlabeled batch - Consistency: 0.123, Pseudo-acc: 67.8%
+📊 Validation - Loss: 2.234, Acc: 42.1%
+💾 Checkpoint saved: best_model_epoch_1.pth
+```
+
+## 🎛️ Hyperparameter Tuning
+
+### Key Parameters to Tune
+
+1. **Learning Rate**: Start with 1e-4, try 5e-5 or 2e-4
+2. **Consistency Weight**: Balance labeled vs consistency loss (0.1 - 2.0)
+3. **EMA Momentum**: Teacher update rate (0.995 - 0.9999)
+4. **Confidence Threshold**: Pseudo-label quality gate (0.9 - 0.98)
+5. **Batch Size**: Depends on GPU memory (16, 32, 64)
+
+### Recommended Starting Points
+```python
+# Conservative (stable but slower)
+learning_rate = 5e-5
+consistency_weight = 0.5
+ema_momentum = 0.999
+
+# Aggressive (faster but may be unstable)
+learning_rate = 2e-4
+consistency_weight = 2.0
+ema_momentum = 0.995
+```
+
+## 🔧 Troubleshooting
 
 ### Common Issues
 
-**Out of Memory:**
-```bash
-# Reduce batch size
---batch_size 16
+1. **CUDA Out of Memory**
+   - Reduce batch size: `--batch_size 16`
+   - Use gradient accumulation in `config.py`
 
-# Reduce image size
---image_size 192
-```
+2. **Poor Consistency Loss**
+   - Lower learning rate: `--learning_rate 5e-5`
+   - Increase EMA momentum: `ema_momentum = 0.9999`
 
-**Poor Convergence:**
-```bash
-# Increase warmup
---warmup_epochs 20
+3. **Low Pseudo-Label Accuracy**
+   - Increase confidence threshold: `confidence_threshold = 0.98`
+   - Train longer on labeled data first
 
-# Reduce learning rate
---learning_rate 5e-5
-```
+4. **Data Loading Errors**
+   - Check file permissions
+   - Verify image formats (JPG, PNG supported)
+   - Ensure proper directory structure
 
-**Teacher-Student Divergence:**
-```bash
-# Lower EMA momentum
---ema_momentum 0.99
+### Performance Tips
 
-# Reduce consistency weight
---consistency_weight 0.5
-```
+1. **Use Mixed Precision**: Faster training with minimal accuracy loss
+2. **Data Loading**: Increase `num_workers` in data loaders
+3. **Augmentation**: Balance between diversity and label preservation
+4. **Validation**: Use stratified sampling for balanced evaluation
 
-## 📚 References
+## 📈 Expected Results
 
-1. **Vision Transformer**: "An Image is Worth 16x16 Words" (Dosovitskiy et al., 2020)
-2. **EMA Teacher-Student**: "Mean teachers are better role models" (Tarvainen & Valpola, 2017)
-3. **Consistency Regularization**: "Temporal Ensembling for Semi-Supervised Learning" (Laine & Aila, 2016)
+### Performance Benchmarks
+- **Supervised Baseline**: ~75-85% accuracy (depends on dataset)
+- **Semi-Supervised**: +5-15% improvement over supervised
+- **Training Time**: ~2-4 hours on single GPU for 100 epochs
+
+### Convergence Patterns
+- **First 20 epochs**: Rapid improvement on labeled data
+- **Epochs 20-60**: Consistency loss stabilizes, pseudo-labels improve
+- **Epochs 60+**: Fine-tuning and final convergence
 
 ## 🤝 Contributing
 
-1. Fork the repository
-2. Create feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit changes (`git commit -m 'Add amazing feature'`)
-4. Push to branch (`git push origin feature/amazing-feature`)
-5. Open Pull Request
+Contributions welcome! Areas for improvement:
+- Additional augmentation strategies
+- Multi-scale training approaches
+- Advanced pseudo-labeling techniques
+- Performance optimizations
+
+## 📚 References
+
+- [Vision Transformer (ViT)](https://arxiv.org/abs/2010.11929)
+- [Mean Teacher](https://arxiv.org/abs/1703.01780)
+- [FixMatch](https://arxiv.org/abs/2001.07685)
+- [Semi-Supervised Learning Literature](https://github.com/yassouali/awesome-semi-supervised-learning)
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- Hugging Face Transformers for ViT implementation
-- timm library for vision models
-- Albumentations for data augmentation
-- Weights & Biases for experiment tracking
+MIT License - feel free to use for research and commercial applications.
 
 ---
 
-**Happy Training! 🐟🤖**
+🐟 Happy fish classification! If you have questions or run into issues, please check the troubleshooting section or open an issue.

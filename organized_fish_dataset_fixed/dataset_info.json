@@ -1,0 +1,27 @@
+{
+  "total_cutouts": 17181,
+  "labeled_cutouts": 3273,
+  "unlabeled_cutouts": 13908,
+  "labeled_families": [
+    "Sparidae",
+    "Serranidae",
+    "Carangidae"
+  ],
+  "processing_args": {
+    "extracted_frames_dir": "Images/extracted_frames",
+    "species_mapping_file": "Images/species_mapping.txt",
+    "output_dir": "organized_fish_dataset_fixed",
+    "buffer_ratio": 0.15,
+    "min_cutout_size": 50,
+    "confidence_threshold": 0.3,
+    "labeled_families": [
+      "Sparidae",
+      "Serranidae",
+      "Carangidae"
+    ],
+    "max_per_species": null,
+    "preview_only": false
+  },
+  "videos_processed": 58,
+  "total_species_in_mapping": 120
+}

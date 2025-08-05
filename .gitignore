@@ -11,6 +11,10 @@
 # Image annotation files
 *.txt
 
+# Keep important txt files
+!requirements*.txt
+!README*.txt
+
 # Dataset directories with images
 Images/
 organized_fish_dataset_fixed/

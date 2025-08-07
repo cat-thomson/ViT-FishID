@@ -2,7 +2,7 @@
 
 A comprehensive implementation of EMA (Exponential Moving Average) teacher-student framework for semi-supervised fish classification using Vision Transformers (ViT).
 
-## 🎯 Overview
+##  Overview
 
 This project implements a state-of-the-art semi-supervised learning pipeline specifically designed for fish classification. It combines:
 

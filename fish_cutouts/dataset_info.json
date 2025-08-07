@@ -23,5 +23,15 @@
     "preview_only": false
   },
   "videos_processed": 58,
-  "total_species_in_mapping": 120
+  "total_species_in_mapping": 120,
+  "processing_history": [
+    {
+      "date": "2025-08-06",
+      "source": "21-05_W frames",
+      "directories_processed": 110,
+      "cutouts_added": 0,
+      "labeled_added": 0,
+      "unlabeled_added": 0
+    }
+  ]
 }

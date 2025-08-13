@@ -357,7 +357,7 @@ class SemiSupervisedTrainer:
             
             # Consistency loss (for ALL unlabeled samples, not just high-confidence)
             unlabeled_mask = ~labeled_mask
-            consistency_loss = 0.0
+            consistency_loss = torch.tensor(0.0, device=self.device, requires_grad=True)
             
             if unlabeled_mask.any():
                 unlabeled_student_logits = student_logits[unlabeled_mask]
@@ -478,7 +478,8 @@ def train_model(
     val_loader: DataLoader,
     epochs: int,
     save_dir: str = './checkpoints',
-    save_frequency: int = 10
+    save_frequency: int = 10,
+    start_epoch: int = 1
 ):
     """
     Full training loop for both supervised and semi-supervised training.
@@ -490,19 +491,29 @@ def train_model(
         epochs: Number of epochs to train
         save_dir: Directory to save checkpoints
         save_frequency: Save checkpoint every N epochs
+        start_epoch: Epoch to start training from (for resuming)
     """
     # Create save directory
     os.makedirs(save_dir, exist_ok=True)
     
-    # Initialize scheduler
-    scheduler = optim.lr_scheduler.CosineAnnealingLR(
-        trainer.optimizer, T_max=epochs, eta_min=1e-6
-    )
+    # Initialize scheduler (adjust for resume)
+    if start_epoch > 1:
+        # For resumed training, we need to adjust the scheduler
+        remaining_epochs = epochs - start_epoch + 1
+        scheduler = optim.lr_scheduler.CosineAnnealingLR(
+            trainer.optimizer, T_max=remaining_epochs, eta_min=1e-6
+        )
+        print(f"🔄 Resuming training from epoch {start_epoch}")
+        print(f"⏰ Remaining epochs: {remaining_epochs}")
+    else:
+        scheduler = optim.lr_scheduler.CosineAnnealingLR(
+            trainer.optimizer, T_max=epochs, eta_min=1e-6
+        )
+        print(f"🚀 Starting fresh training for {epochs} epochs")
     
-    print(f"🚀 Starting training for {epochs} epochs...")
     print(f"📁 Checkpoints will be saved to: {save_dir}")
     
-    for epoch in range(epochs):
+    for epoch in range(start_epoch, epochs + 1):
         trainer.current_epoch = epoch
         
         # Training
@@ -547,24 +558,54 @@ def train_model(
             
             wandb.log(log_dict)
         
-        # Save checkpoint
+        # Save checkpoint - EVERY EPOCH with Google Drive backup
         is_best = teacher_val_metrics['top1_accuracy'] > trainer.best_accuracy
         if is_best:
             trainer.best_accuracy = teacher_val_metrics['top1_accuracy']
             print(f"🏆 New best accuracy: {trainer.best_accuracy:.2f}%")
         
-        if epoch % save_frequency == 0 or is_best:
-            checkpoint = {
-                'epoch': epoch,
-                'student_state_dict': trainer.student_model.state_dict(),
-                'teacher_state_dict': trainer.ema_teacher.teacher_model.state_dict(),
-                'optimizer_state_dict': trainer.optimizer.state_dict(),
-                'scheduler_state_dict': scheduler.state_dict(),
-                'best_accuracy': trainer.best_accuracy,
-                'train_metrics': train_metrics,
-                'val_metrics': teacher_val_metrics
-            }
-            
-            save_checkpoint(checkpoint, is_best, save_dir, f'checkpoint_epoch_{epoch}.pth')
+        # Save checkpoint every epoch (changed from save_frequency check)
+        checkpoint = {
+            'epoch': epoch,
+            'student_state_dict': trainer.student_model.state_dict(),
+            'ema_teacher_state_dict': trainer.ema_teacher.teacher.state_dict(),  # Fixed key name
+            'optimizer_state_dict': trainer.optimizer.state_dict(),
+            'scheduler_state_dict': scheduler.state_dict(),
+            'best_accuracy': trainer.best_accuracy,
+            'train_metrics': train_metrics,
+            'val_metrics': teacher_val_metrics,
+            'num_classes': getattr(trainer, 'num_classes', 37),
+            'consistency_weight': getattr(trainer, 'consistency_weight', 2.0),
+            'pseudo_label_threshold': getattr(trainer, 'pseudo_label_threshold', 0.7)
+        }
+        
+        # Save regular checkpoint every epoch
+        checkpoint_filename = f'checkpoint_epoch_{epoch}.pth'
+        save_checkpoint(checkpoint, is_best, save_dir, checkpoint_filename)
+        
+        # Additional Google Drive backup every 5 epochs
+        if epoch % 5 == 0 or is_best:
+            # Try to save to Google Drive backup location
+            try:
+                google_drive_backup = '/content/drive/MyDrive/ViT-FishID/checkpoints_backup'
+                if save_dir.startswith('/content/drive/MyDrive'):
+                    # Already saving to Google Drive, create additional backup
+                    backup_dir = google_drive_backup
+                    os.makedirs(backup_dir, exist_ok=True)
+                    backup_path = os.path.join(backup_dir, checkpoint_filename)
+                    torch.save(checkpoint, backup_path)
+                    print(f"💾 Backup saved to: {backup_path}")
+                elif not save_dir.startswith('/content/drive/MyDrive'):
+                    # Local training, need to save to Google Drive
+                    print(f"💾 Saving epoch {epoch} backup to Google Drive...")
+                    backup_dir = google_drive_backup
+                    os.makedirs(backup_dir, exist_ok=True)
+                    backup_path = os.path.join(backup_dir, checkpoint_filename)
+                    torch.save(checkpoint, backup_path)
+                    print(f"✅ Google Drive backup: {backup_path}")
+            except Exception as e:
+                print(f"⚠️ Could not save Google Drive backup: {e}")
+        
+        print(f"📊 Epoch {epoch} checkpoint saved (Size: {os.path.getsize(os.path.join(save_dir, checkpoint_filename)) / (1024*1024):.1f} MB)")
     
     print(f"\n🎉 Training completed! Best validation accuracy: {trainer.best_accuracy:.2f}%")

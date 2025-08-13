@@ -199,12 +199,18 @@ class ConsistencyLoss(nn.Module):
         Returns:
             Consistency loss value
         """
+        # Ensure both tensors are on the same device and have the same shape
+        assert student_logits.shape == teacher_logits.shape, f"Shape mismatch: {student_logits.shape} vs {teacher_logits.shape}"
+        
         # Apply temperature scaling and softmax
         student_probs = F.softmax(student_logits / self.temperature, dim=1)
         teacher_probs = F.softmax(teacher_logits / self.temperature, dim=1)
         
         # MSE loss between probability distributions
         loss = self.mse_loss(student_probs, teacher_probs)
+        
+        # Scale by temperature squared to maintain gradient magnitude
+        loss = loss * (self.temperature ** 2)
         
         return loss
 

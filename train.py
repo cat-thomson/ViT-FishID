@@ -304,10 +304,41 @@ def main():
         )
     
     # Resume from checkpoint if specified
+    start_epoch = 1
     if args.resume_from:
         print(f"📥 Resuming from checkpoint: {args.resume_from}")
-        # TODO: Implement checkpoint loading
-        # load_checkpoint(args.resume_from, trainer)
+        
+        try:
+            # Load checkpoint
+            checkpoint = torch.load(args.resume_from, map_location=device)
+            
+            # Load model states
+            trainer.student_model.load_state_dict(checkpoint['student_state_dict'])
+            if hasattr(trainer, 'ema_teacher'):
+                if 'ema_teacher_state_dict' in checkpoint:
+                    trainer.ema_teacher.teacher.load_state_dict(checkpoint['ema_teacher_state_dict'])
+                elif 'teacher_state_dict' in checkpoint:
+                    trainer.ema_teacher.teacher.load_state_dict(checkpoint['teacher_state_dict'])
+            
+            # Load optimizer state
+            if 'optimizer_state_dict' in checkpoint:
+                trainer.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+            
+            # Get starting epoch
+            start_epoch = checkpoint.get('epoch', 0) + 1
+            
+            # Load best accuracy
+            if hasattr(trainer, 'best_accuracy'):
+                trainer.best_accuracy = checkpoint.get('best_accuracy', checkpoint.get('best_acc', 0.0))
+            
+            print(f"✅ Successfully loaded checkpoint from epoch {checkpoint.get('epoch', 0)}")
+            print(f"📊 Previous best accuracy: {checkpoint.get('best_accuracy', checkpoint.get('best_acc', 'Unknown'))}")
+            print(f"🚀 Resuming training from epoch {start_epoch}")
+            
+        except Exception as e:
+            print(f"❌ Error loading checkpoint: {e}")
+            print("🔄 Starting training from scratch...")
+            start_epoch = 1
     
     # Start training
     print(f"\n🎯 Starting {args.mode} training...")
@@ -318,7 +349,8 @@ def main():
         val_loader=val_loader,
         epochs=args.epochs,
         save_dir=args.save_dir,
-        save_frequency=args.save_frequency
+        save_frequency=args.save_frequency,
+        start_epoch=start_epoch
     )
     
     print(f"\n✅ Training completed!")

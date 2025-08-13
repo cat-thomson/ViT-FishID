@@ -4,22 +4,14 @@ A streamlined implementation of Vision Transformer (ViT) with EMA teacher-studen
 
 ## 🎯 Project Overview
 
-This project achieved **78.32% validation accuracy** on fish species classification using semi-supervised learning### Data Loading Errors**
-```bash
-# Check data structure and get help
-python quickstart.py --check-setup
-python quickstart.py --example-commands
-``` 19,219 fish images (6,546 labeled + 12,673 unlabeled) across 36 species.
+This project achieved **78.32% validation accuracy** on fish species classification using semi-supervised learning with 19,219 fish images (6,546 labeled + 12,673 unlabeled) across 36 species.
 
 ### Key Features
 - **Semi-Supervised Learning**: EMA teacher-student framework with consistency regularization
 - **Vision Transformers**: ViT-Base model with 85.8M parameters
-- **Proper Data Splitting**: Train/validation/test splits with stratified sampling
 - **Automated Data Pipeline**: Extract fish cutouts from bounding box annotations
-- **Google Colab Support**: Complete setup guide for cloud training
+- **Google Colab Support**: Complete notebook for cloud training
 - **Production Ready**: Achieved research-quality results
-- **Simplified Structure**: Streamlined from 40+ files to 8 essential components
-- **All-in-One**: Single training script supports both supervised and semi-supervised modes
 
 ## 📁 Simplified Project Structure
 
@@ -33,29 +25,17 @@ ViT-FishID/
 ├── data.py                       # Data loading and transformations
 ├── pipeline.py                   # Data extraction and organization
 ├── utils.py                      # Utility functions
-├── evaluate.py                   # Model evaluation (optional)
-├── quickstart.py                 # Quick start helper script
-├── ViT_FishID_Colab_Training.ipynb  # Google Colab notebook
-├── COLAB_GUIDE.md                # Detailed Colab setup guide
-├── colab_setup.py                # Colab helper utilities
 ├── species_mapping.txt           # Species ID mapping (122 species)
-├── backup_old_files/             # All original files safely preserved
-├── fish_cutouts/                 # Processed fish dataset
-├── Frames/                       # Original video frames
-└── semi_supervised_checkpoints/  # Trained model checkpoints
+├── Colab_Training.ipynb          # Google Colab notebook
+└── data/                         # Dataset directory
+    ├── labeled/                  # Labeled fish by species
+    │   ├── Sparidae_Chrysoblephus_laticeps/
+    │   ├── Serranidae_Epinephelus_marginatus/
+    │   └── ...
+    └── unlabeled/                # Unlabeled fish images
 ```
 
 ## 🚀 Quick Start
-
-### 0. Quick Setup Check
-
-```bash
-# Check if everything is set up correctly
-python quickstart.py --check-setup
-
-# See example commands
-python quickstart.py --example-commands
-```
 
 ### 1. Install Dependencies
 
@@ -112,8 +92,6 @@ python train.py \
     --mode semi_supervised \
     --epochs 100 \
     --batch_size 32 \
-    --val_split 0.2 \
-    --test_split 0.2 \
     --consistency_weight 2.0 \
     --pseudo_label_threshold 0.7 \
     --use_wandb
@@ -127,77 +105,25 @@ python train.py \
     --mode supervised \
     --epochs 100 \
     --batch_size 32 \
-    --val_split 0.2 \
-    --test_split 0.2 \
     --use_wandb
 ```
 
-### 4. Data Splitting Methodology
-
-This project implements proper **train/validation/test splitting** for robust model evaluation:
-
-#### Split Configuration
-- **Training Set** (60%): Used for model training
-- **Validation Set** (20%): Used for hyperparameter tuning and model selection
-- **Test Set** (20%): Reserved for final, unbiased evaluation
-
-#### Key Features
-- **Stratified Splitting**: Maintains class distribution across all splits
-- **Reproducible**: Uses fixed random seed for consistent splits
-- **Configurable**: Adjust split ratios with `--val_split` and `--test_split` parameters
-- **Semi-Supervised Aware**: Only labeled data is split; unlabeled data is used only in training
-
-#### Usage Examples
-
-```bash
-# Default splits (60% train, 20% val, 20% test)
-python train.py --data_dir ./data --mode semi_supervised
-
-# Custom splits (70% train, 15% val, 15% test)
-python train.py --data_dir ./data --mode supervised \
-    --val_split 0.15 --test_split 0.15
-
-# Larger validation set for extensive hyperparameter tuning
-python train.py --data_dir ./data --mode semi_supervised \
-    --val_split 0.25 --test_split 0.15
-```
-
-#### Best Practices
-- The **test set is never used during training** - it's reserved for final evaluation
-- Use `evaluate.py` with the test set for unbiased performance metrics
-- Validation set is used for early stopping and model selection
-- Results reported during training are validation metrics, not test metrics
-
 ## 🌐 Google Colab Training
 
-For users without local GPU access, you can use Google Colab with our pre-built notebook:
+For users without local GPU access:
 
-### 🚀 Quick Start with Colab
+1. **Open Colab**: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/cat-thomson/ViT-FishID/blob/main/Colab_Training.ipynb)
 
-1. **Open Pre-built Notebook**: 
-   - Go to [Google Colab](https://colab.research.google.com/)
-   - Click "GitHub" tab and enter: `cat-thomson/ViT-FishID`
-   - Select: `ViT_FishID_Colab_Training.ipynb`
+2. **Upload Data**: Put your fish images in Google Drive
 
-2. **Enable GPU**: Runtime → Change runtime type → Hardware accelerator → GPU
+3. **Update Paths**: Modify the data path in the notebook
 
-3. **Upload Data**: Put your `fish_cutouts.zip` file in Google Drive:
-   - Upload the ZIP file to any location in Google Drive
-   - The notebook automatically extracts it for faster training
-   - ZIP should contain `labeled/` and `unlabeled/` folders
+4. **Run Training**: Execute all cells to train your model
 
-4. **Run Training**: Execute notebook cells in order (detailed in `COLAB_GUIDE.md`)
-
-### 📊 Colab Performance
-- **Training Time**: 2-3 hours for 50 epochs on Tesla T4
-- **Memory Usage**: ~6-8GB GPU memory
-- **Accuracy**: Similar to local training (~75-85%)
-- **Cost**: Free tier available (with usage limits)
-
-### 📚 Additional Resources
-- **`ViT_FishID_Colab_Training.ipynb`**: Complete Colab notebook
-- **`COLAB_GUIDE.md`**: Detailed setup guide and troubleshooting
-- **`colab_setup.py`**: Helper utilities for Colab setup
+**Expected Colab Performance:**
+- Training Time: 2-3 hours for 50 epochs on Tesla T4
+- Memory Usage: ~6-8GB GPU memory
+- Accuracy: Similar to local training (~75-85%)
 
 ## 🧠 Model Architecture
 
@@ -223,8 +149,6 @@ python train.py \
     --mode semi_supervised \
     --epochs 100 \
     --batch_size 32 \
-    --val_split 0.2 \
-    --test_split 0.2 \
     --learning_rate 1e-4 \
     --consistency_weight 2.0 \
     --pseudo_label_threshold 0.7 \
@@ -286,10 +210,6 @@ Epoch 100/100:
 # Required
 --data_dir PATH               # Dataset directory
 --mode {supervised,semi_supervised}
-
-# Data Splitting
---val_split 0.2               # Validation split ratio (default: 0.2)
---test_split 0.2              # Test split ratio (default: 0.2)
 
 # Model & Training
 --model_name MODEL            # ViT architecture
@@ -504,17 +424,5 @@ MIT License - feel free to use for research and commercial applications.
 - ✅ **Semi-supervised learning** working correctly
 - ✅ **Production-ready** pipeline and training code
 - ✅ **Google Colab** support for cloud training
-- ✅ **Streamlined codebase** - 80% reduction in files (40+ → 8 core files)
-- ✅ **Comprehensive documentation** with troubleshooting guides
-
-## 📁 Project Organization Notes
-
-This project has been streamlined for simplicity and maintainability:
-
-- **Core files**: Only 8 essential Python files remain
-- **Backup preserved**: All original files are safely stored in `backup_old_files/`
-- **Single entry point**: `train.py` handles both training modes
-- **Unified modules**: Combined related functionality into cohesive files
-- **Quick start**: Use `python quickstart.py` for help and examples
 
 **Ready to classify fish with state-of-the-art accuracy! 🐟**

@@ -372,11 +372,21 @@ def create_dataloaders(
     
     # First split: separate test set
     from sklearn.model_selection import train_test_split
+    from collections import Counter
+    
+    # Check if we can use stratified splitting
+    class_counts = Counter(labeled_targets)
+    min_class_count = min(class_counts.values())
+    use_stratify = min_class_count >= 2
+    
+    if not use_stratify:
+        print(f"⚠️  Warning: Some classes have only {min_class_count} sample(s). Using random splitting instead of stratified.")
+        print(f"   Classes with 1 sample: {[class_names[i] for i, count in class_counts.items() if count == 1]}")
     
     temp_paths, test_paths, temp_targets, test_targets = train_test_split(
         labeled_paths, labeled_targets,
         test_size=test_split,
-        stratify=labeled_targets,
+        stratify=labeled_targets if use_stratify else None,
         random_state=seed
     )
     
@@ -384,10 +394,15 @@ def create_dataloaders(
     # Adjust val_split to account for already removed test data
     adjusted_val_split = val_split / (1 - test_split)
     
+    # Check again for the second split
+    temp_class_counts = Counter(temp_targets)
+    temp_min_class_count = min(temp_class_counts.values())
+    use_stratify_val = temp_min_class_count >= 2
+    
     train_paths, val_paths, train_targets, val_targets = train_test_split(
         temp_paths, temp_targets,
         test_size=adjusted_val_split,
-        stratify=temp_targets,
+        stratify=temp_targets if use_stratify_val else None,
         random_state=seed + 1  # Different seed for second split
     )
     
@@ -496,11 +511,21 @@ def create_semi_supervised_dataloaders(
     
     # First split: separate test set from labeled data
     from sklearn.model_selection import train_test_split
+    from collections import Counter
+    
+    # Check if we can use stratified splitting
+    class_counts = Counter(labeled_targets)
+    min_class_count = min(class_counts.values())
+    use_stratify = min_class_count >= 2
+    
+    if not use_stratify:
+        print(f"⚠️  Warning: Some classes have only {min_class_count} sample(s). Using random splitting instead of stratified.")
+        print(f"   Classes with 1 sample: {[class_names[i] for i, count in class_counts.items() if count == 1]}")
     
     temp_paths, test_paths, temp_targets, test_targets = train_test_split(
         labeled_paths, labeled_targets,
         test_size=test_split,
-        stratify=labeled_targets,
+        stratify=labeled_targets if use_stratify else None,
         random_state=seed
     )
     
@@ -508,10 +533,15 @@ def create_semi_supervised_dataloaders(
     # Adjust val_split to account for already removed test data
     adjusted_val_split = val_split / (1 - test_split)
     
+    # Check again for the second split
+    temp_class_counts = Counter(temp_targets)
+    temp_min_class_count = min(temp_class_counts.values())
+    use_stratify_val = temp_min_class_count >= 2
+    
     train_paths, val_paths, train_targets, val_targets = train_test_split(
         temp_paths, temp_targets,
         test_size=adjusted_val_split,
-        stratify=temp_targets,
+        stratify=temp_targets if use_stratify_val else None,
         random_state=seed + 1  # Different seed for second split
     )
     

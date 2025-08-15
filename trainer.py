@@ -568,7 +568,7 @@ def train_model(
         checkpoint = {
             'epoch': epoch,
             'student_state_dict': trainer.student_model.state_dict(),
-            'ema_teacher_state_dict': trainer.ema_teacher.teacher.state_dict(),  # Fixed key name
+            'ema_teacher_state_dict': trainer.ema_teacher.teacher_model.state_dict(),  # Fixed key name
             'optimizer_state_dict': trainer.optimizer.state_dict(),
             'scheduler_state_dict': scheduler.state_dict(),
             'best_accuracy': trainer.best_accuracy,

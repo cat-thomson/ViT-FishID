@@ -55,7 +55,7 @@ def resume_training_from_checkpoint(
     
     # Restore model states
     student.load_state_dict(checkpoint['student_state_dict'])
-    ema_teacher.teacher.load_state_dict(checkpoint['ema_teacher_state_dict'])
+    ema_teacher.teacher_model.load_state_dict(checkpoint['ema_teacher_state_dict'])
     
     # Get the last completed epoch
     start_epoch = checkpoint['epoch'] + 1

@@ -316,9 +316,9 @@ def main():
             trainer.student_model.load_state_dict(checkpoint['student_state_dict'])
             if hasattr(trainer, 'ema_teacher'):
                 if 'ema_teacher_state_dict' in checkpoint:
-                    trainer.ema_teacher.teacher.load_state_dict(checkpoint['ema_teacher_state_dict'])
+                    trainer.ema_teacher.teacher_model.load_state_dict(checkpoint['ema_teacher_state_dict'])
                 elif 'teacher_state_dict' in checkpoint:
-                    trainer.ema_teacher.teacher.load_state_dict(checkpoint['teacher_state_dict'])
+                    trainer.ema_teacher.teacher_model.load_state_dict(checkpoint['teacher_state_dict'])
             
             # Load optimizer state
             if 'optimizer_state_dict' in checkpoint:

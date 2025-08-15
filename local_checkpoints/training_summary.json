@@ -1,0 +1,43 @@
+{
+  "training_info": {
+    "start_time": "2025-08-14 14:38:57",
+    "end_time": "2025-08-14 14:49:32",
+    "total_epochs": 100,
+    "epochs_completed": 20,
+    "best_epoch": 20,
+    "best_accuracy": 88.33819241982508
+  },
+  "config": {
+    "project_root": "/Users/catalinathomson/Desktop/Fish/ViT-FishID",
+    "data_dir": "/Users/catalinathomson/Desktop/Fish/ViT-FishID/fish_cutouts",
+    "checkpoint_path": "/Users/catalinathomson/Desktop/Fish/ViT-FishID/checkpoint_epoch_19.pth",
+    "save_dir": "/Users/catalinathomson/Desktop/Fish/ViT-FishID/local_checkpoints",
+    "start_epoch": 20,
+    "total_epochs": 100,
+    "remaining_epochs": 81,
+    "mode": "semi_supervised",
+    "batch_size": 8,
+    "learning_rate": 0.0001,
+    "weight_decay": 0.05,
+    "model_name": "vit_base_patch16_224",
+    "num_classes": 37,
+    "pretrained": true,
+    "dropout_rate": 0.1,
+    "consistency_weight": 2.0,
+    "pseudo_label_threshold": 0.7,
+    "temperature": 4.0,
+    "warmup_epochs": 5,
+    "ramp_up_epochs": 15,
+    "ema_momentum": 0.999,
+    "unlabeled_ratio": 2.0,
+    "save_frequency": 1,
+    "image_size": 224,
+    "num_workers": 2,
+    "val_split": 0.2,
+    "test_split": 0.2,
+    "seed": 42,
+    "device": "mps",
+    "use_wandb": false
+  },
+  "final_metrics": {}
+}

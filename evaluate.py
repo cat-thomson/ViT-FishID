@@ -9,9 +9,9 @@ from typing import Dict, List, Tuple
 import os
 from tqdm import tqdm
 
-from vit_model import ViTForFishClassification
-from ema_teacher import EMATeacher
-from data_loader import create_fish_dataloaders
+from model import ViTForFishClassification
+# from trainer import EMATeacher  # Not needed for evaluation
+from data import create_dataloaders
 from utils import accuracy, load_checkpoint, get_device
 
 
@@ -62,6 +62,7 @@ class ModelEvaluator:
         
         total_correct = 0
         total_samples = 0
+        top5_correct = 0  # Add top-5 tracking
         
         print("Evaluating model...")
         
@@ -75,6 +76,10 @@ class ModelEvaluator:
                 probabilities = torch.softmax(logits, dim=1)
                 predictions = torch.argmax(logits, dim=1)
                 
+                # Calculate top-5 accuracy
+                _, top5_pred = logits.topk(5, 1, True, True)
+                top5_correct += (targets.view(-1, 1).expand_as(top5_pred) == top5_pred).sum().item()
+                
                 # Collect results
                 all_predictions.extend(predictions.cpu().numpy())
                 all_targets.extend(targets.cpu().numpy())
@@ -86,6 +91,7 @@ class ModelEvaluator:
         
         # Calculate metrics
         accuracy_score = total_correct / total_samples * 100
+        top5_accuracy_score = top5_correct / total_samples * 100
         
         # Generate classification report
         class_report = classification_report(
@@ -105,17 +111,20 @@ class ModelEvaluator:
         
         # Calculate per-class metrics
         results = {
-            'overall_accuracy': accuracy_score,
+            'accuracy': accuracy_score,  # Changed from 'overall_accuracy' to match main function
+            'top5_accuracy': top5_accuracy_score,  # Add top-5 accuracy
             'macro_avg_precision': class_report['macro avg']['precision'] * 100,
             'macro_avg_recall': class_report['macro avg']['recall'] * 100,
             'macro_avg_f1': class_report['macro avg']['f1-score'] * 100,
             'weighted_avg_precision': class_report['weighted avg']['precision'] * 100,
             'weighted_avg_recall': class_report['weighted avg']['recall'] * 100,
-            'weighted_avg_f1': class_report['weighted avg']['f1-score'] * 100
+            'weighted_avg_f1': class_report['weighted avg']['f1-score'] * 100,
+            'classification_report': class_report  # Add classification report to results
         }
         
         print(f"\nEvaluation Results:")
-        print(f"Overall Accuracy: {accuracy_score:.2f}%")
+        print(f"Top-1 Accuracy: {accuracy_score:.2f}%")
+        print(f"Top-5 Accuracy: {top5_accuracy_score:.2f}%")
         print(f"Macro Avg F1-Score: {results['macro_avg_f1']:.2f}%")
         print(f"Weighted Avg F1-Score: {results['weighted_avg_f1']:.2f}%")
         
@@ -293,40 +302,101 @@ def compare_student_teacher(
 
 
 def main():
-    """Example evaluation script."""
-    # Configuration
-    checkpoint_path = './checkpoints/model_best.pth'
-    data_dir = '/path/to/fish/dataset'  # Update this
-    device = get_device()
+    """Main evaluation script."""
+    import argparse
     
-    # Load data
-    _, val_loader, class_names = create_fish_dataloaders(
-        data_dir=data_dir,
-        batch_size=32,
-        image_size=224
+    # Parse arguments
+    parser = argparse.ArgumentParser(description='Evaluate ViT-FishID model')
+    parser.add_argument('--data_dir', type=str, required=True,
+                        help='Path to fish dataset directory')
+    parser.add_argument('--model_path', type=str, required=True,
+                        help='Path to model checkpoint')
+    parser.add_argument('--batch_size', type=int, default=32,
+                        help='Batch size for evaluation')
+    parser.add_argument('--image_size', type=int, default=224,
+                        help='Input image size')
+    
+    args = parser.parse_args()
+    
+    print(f"🔍 Evaluating model: {args.model_path}")
+    print(f"📊 Data directory: {args.data_dir}")
+    
+    device = get_device()
+    print(f"🖥️  Using device: {device}")
+    
+    # Load data - use test_loader for evaluation
+    train_loader, val_loader, test_loader, class_names = create_dataloaders(
+        data_dir=args.data_dir,
+        batch_size=args.batch_size,
+        image_size=args.image_size
     )
     
-    # Create models
+    print(f"📊 Found {len(class_names)} classes: {class_names[:5]}..." if len(class_names) > 5 else f"📊 Found {len(class_names)} classes: {class_names}")
+    
+    # Create model
     num_classes = len(class_names)
-    student_model = ViTForFishClassification(num_classes=num_classes)
+    model = ViTForFishClassification(
+        num_classes=num_classes,
+        model_name='vit_small_patch16_224',  # Adjust based on your training config
+        pretrained=False,
+        dropout_rate=0.1
+    ).to(device)
     
     # Load checkpoint
-    if os.path.exists(checkpoint_path):
-        checkpoint = load_checkpoint(checkpoint_path, student_model)
+    if os.path.exists(args.model_path):
+        print(f"📥 Loading checkpoint: {args.model_path}")
+        checkpoint = torch.load(args.model_path, map_location=device)
         
-        # Create teacher model and load weights
-        teacher_model = ViTForFishClassification(num_classes=num_classes)
-        teacher_model.load_state_dict(checkpoint['teacher_state_dict'])
-        
-        # Compare models
-        results = compare_student_teacher(
-            student_model, teacher_model, val_loader, class_names, device
-        )
-        
-        print("Evaluation completed! Check ./evaluation_results/ for detailed outputs.")
-    
+        # Handle different checkpoint formats
+        if 'student_state_dict' in checkpoint:
+            model.load_state_dict(checkpoint['student_state_dict'])
+            print(f"✅ Loaded student model weights")
+            if 'best_accuracy' in checkpoint:
+                print(f"📊 Training best accuracy: {checkpoint['best_accuracy']:.2f}%")
+        elif 'model_state_dict' in checkpoint:
+            model.load_state_dict(checkpoint['model_state_dict'])
+            print(f"✅ Loaded model weights")
+        else:
+            model.load_state_dict(checkpoint)
+            print(f"✅ Loaded model weights")
     else:
-        print(f"Checkpoint not found: {checkpoint_path}")
+        print(f"❌ Checkpoint not found: {args.model_path}")
+        return
+    
+    # Create evaluator
+    evaluator = ModelEvaluator(model, class_names, device)
+    
+    # Evaluate on test set
+    print(f"\n🧪 Evaluating on test set...")
+    test_results = evaluator.evaluate_dataset(test_loader, "test")
+    
+    # Print results
+    print(f"\n📊 TEST RESULTS:")
+    print(f"🎯 Accuracy: {test_results['accuracy']:.2f}%")
+    print(f"📈 Top-5 Accuracy: {test_results.get('top5_accuracy', 'N/A')}")
+    
+    # Print per-class results
+    if 'classification_report' in test_results:
+        print(f"\n📋 Per-class Performance:")
+        class_report = test_results['classification_report']
+        for class_name in class_names[:10]:  # Show first 10 classes
+            if class_name in class_report:
+                precision = class_report[class_name]['precision']
+                recall = class_report[class_name]['recall']
+                f1 = class_report[class_name]['f1-score']
+                print(f"  {class_name}: P={precision:.3f}, R={recall:.3f}, F1={f1:.3f}")
+        
+        if len(class_names) > 10:
+            print(f"  ... and {len(class_names) - 10} more classes")
+    
+    # Also evaluate on validation set for comparison
+    print(f"\n🔍 Evaluating on validation set...")
+    val_results = evaluator.evaluate_dataset(val_loader, "validation")
+    print(f"📊 VALIDATION RESULTS:")
+    print(f"🎯 Accuracy: {val_results['accuracy']:.2f}%")
+    
+    print(f"\n✅ Evaluation completed!")
+    print(f"📊 Final Test Accuracy: {test_results['accuracy']:.2f}%")
 
 
 if __name__ == '__main__':

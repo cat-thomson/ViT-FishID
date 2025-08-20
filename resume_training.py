@@ -89,7 +89,7 @@ def resume_training_from_checkpoint(
     trainer.train(
         num_epochs=remaining_epochs,
         save_dir=os.path.dirname(checkpoint_path),
-        save_frequency=5,  # Save every 5 epochs
+        save_frequency=1,  # Save every epoch for maximum safety
         patience=15,
         start_epoch=start_epoch,  # Start from the next epoch
         best_val_acc=best_val_acc  # Continue tracking best accuracy

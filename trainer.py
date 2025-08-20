@@ -478,7 +478,7 @@ def train_model(
     val_loader: DataLoader,
     epochs: int,
     save_dir: str = './checkpoints',
-    save_frequency: int = 10,
+    save_frequency: int = 1,
     start_epoch: int = 1
 ):
     """
@@ -583,28 +583,27 @@ def train_model(
         checkpoint_filename = f'checkpoint_epoch_{epoch}.pth'
         save_checkpoint(checkpoint, is_best, save_dir, checkpoint_filename)
         
-        # Additional Google Drive backup every 5 epochs
-        if epoch % 5 == 0 or is_best:
-            # Try to save to Google Drive backup location
-            try:
-                google_drive_backup = '/content/drive/MyDrive/ViT-FishID/checkpoints_backup'
-                if save_dir.startswith('/content/drive/MyDrive'):
-                    # Already saving to Google Drive, create additional backup
-                    backup_dir = google_drive_backup
-                    os.makedirs(backup_dir, exist_ok=True)
-                    backup_path = os.path.join(backup_dir, checkpoint_filename)
-                    torch.save(checkpoint, backup_path)
-                    print(f"💾 Backup saved to: {backup_path}")
-                elif not save_dir.startswith('/content/drive/MyDrive'):
-                    # Local training, need to save to Google Drive
-                    print(f"💾 Saving epoch {epoch} backup to Google Drive...")
-                    backup_dir = google_drive_backup
-                    os.makedirs(backup_dir, exist_ok=True)
-                    backup_path = os.path.join(backup_dir, checkpoint_filename)
-                    torch.save(checkpoint, backup_path)
-                    print(f"✅ Google Drive backup: {backup_path}")
-            except Exception as e:
-                print(f"⚠️ Could not save Google Drive backup: {e}")
+        # Google Drive backup EVERY checkpoint (not just every 5 epochs)
+        try:
+            google_drive_backup = '/content/drive/MyDrive/ViT-FishID/checkpoints_backup'
+            if save_dir.startswith('/content/drive/MyDrive'):
+                # Already saving to Google Drive, create additional backup
+                backup_dir = google_drive_backup
+                os.makedirs(backup_dir, exist_ok=True)
+                backup_path = os.path.join(backup_dir, checkpoint_filename)
+                torch.save(checkpoint, backup_path)
+                print(f"💾 Drive backup saved: {backup_path}")
+            elif not save_dir.startswith('/content/drive/MyDrive'):
+                # Local training, need to save to Google Drive
+                print(f"💾 Saving epoch {epoch} backup to Google Drive...")
+                backup_dir = google_drive_backup
+                os.makedirs(backup_dir, exist_ok=True)
+                backup_path = os.path.join(backup_dir, checkpoint_filename)
+                torch.save(checkpoint, backup_path)
+                print(f"✅ Google Drive backup: {backup_path}")
+        except Exception as e:
+            print(f"⚠️ Could not save Google Drive backup: {e}")
+            print("💡 Make sure Google Drive is mounted properly")
         
         print(f"📊 Epoch {epoch} checkpoint saved (Size: {os.path.getsize(os.path.join(save_dir, checkpoint_filename)) / (1024*1024):.1f} MB)")
     

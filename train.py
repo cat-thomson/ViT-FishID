@@ -90,8 +90,8 @@ def parse_arguments():
     # Training configuration
     parser.add_argument('--save_dir', type=str, default='./checkpoints',
                         help='Directory to save checkpoints (default: ./checkpoints)')
-    parser.add_argument('--save_frequency', type=int, default=10,
-                        help='Save checkpoint every N epochs (default: 10)')
+    parser.add_argument('--save_frequency', type=int, default=1,
+                        help='Save checkpoint every N epochs (default: 1 for maximum safety)')
     parser.add_argument('--resume_from', type=str, default=None,
                         help='Path to checkpoint to resume from')
     
